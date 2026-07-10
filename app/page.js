@@ -111,7 +111,11 @@ export default function Home() {
           {aiResults !== null && (
             <div className="mt-3 flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                🤖 Found <span className="font-semibold text-indigo-600">{aiResults.length}</span> result{aiResults.length !== 1 ? "s" : ""} for <span className="font-semibold">"{aiQuery}"</span>
+                {aiSource === "vector" ? "🧠 Vector search found" : "🤖 AI found"}{" "}
+                <span className="font-semibold text-indigo-600">{aiResults.length}</span> result{aiResults.length !== 1 ? "s" : ""} for <span className="font-semibold">"{aiQuery}"</span>
+                <span className="ml-2 text-xs text-gray-300">
+                  {aiSource === "vector" ? "(semantic similarity)" : "(Groq LLM)"}
+                </span>
               </p>
               <button onClick={clearAiSearch} className="text-xs text-gray-400 hover:text-red-400">Clear ✕</button>
             </div>

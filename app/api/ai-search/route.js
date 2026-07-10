@@ -5,12 +5,49 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
     try {
         const { query } = await req.json();
-
-        if (!query || query.trim() === "") {
-            return NextResponse.json({ products: [], source: "empty" });
-        }
+        if (!query?.trim()) return NextResponse.json({ products: [], source: "empty" });
 
         await connectDB();
+
+        // ── STEP 1: Atlas AutoEmbed Vector Search ─────────────────────────
+        // Uses $vectorSearch with autoembed_index — MongoDB auto-embeds the query
+        // using voyage-4, then finds nearest neighbors in vector space
+        try {
+            const pipeline = [
+                {
+                    $vectorSearch: {
+                        index: "autoembed_index",
+                        path: "description",
+                        query: query,          // AutoEmbed uses "query" not "queryText"
+                        numCandidates: 50,
+                        limit: 10,
+                    },
+                },
+                {
+                    $addFields: {
+                        vectorScore: { $meta: "vectorSearchScore" },
+                    },
+                },
+            ];
+
+            const results = await Product.aggregate(pipeline);
+
+            if (results.length > 0) {
+                // Filter out low confidence matches
+                const confident = results.filter((r) => r.vectorScore >= 0.5);
+                const toReturn = confident.length > 0 ? confident : results.slice(0, 5);
+
+                console.log(`✅ Atlas Vector Search: ${toReturn.length} results for "${query}" | top score: ${results[0]?.vectorScore?.toFixed(3)}`);
+                return NextResponse.json({ products: toReturn, source: "vector" });
+            }
+        } catch (vectorErr) {
+            console.warn("⚠️ Atlas Vector Search failed:", vectorErr.message);
+            // Falls through to Groq
+        }
+
+        // ── STEP 2: Groq LLM Fallback ────────────────────────────────────
+        // Handles abstract/vague queries the vector can't handle alone
+        console.log(`🤖 Falling back to Groq for "${query}"`);
         const products = await Product.find();
 
         const productList = products.map((p) =>
@@ -28,62 +65,36 @@ export async function POST(req) {
                 messages: [
                     {
                         role: "system",
-                        content: `You are a strict and intelligent product search engine for an ecommerce store.
-
-RULES:
-1. Fix typos and misspellings in the user query before searching (e.g. "headphonse" = headphones, "sneeker" = sneakers, "keyborad" = keyboard)
-2. Understand natural language and intent (e.g. "something for the gym" = yoga mat, running sneakers, resistance bands, foam roller, water bottle)
-3. Handle disordered or broken sentences (e.g. "want buy thing music listen" = headphones, earbuds, speaker)
-4. Match by concept, not just keywords (e.g. "gift for tech person" = keyboard, headphones, mouse, smartwatch, laptop stand)
-5. ONLY return products that are genuinely relevant to the query intent
-6. Do NOT return random or unrelated products just to fill results
-7. If truly nothing matches, return []
-8. Return ONLY a raw JSON array of IDs, nothing else — no explanation, no markdown, no text`
+                        content: `You are a strict product search engine. Fix typos, understand intent, handle disordered sentences. Only return genuinely relevant product IDs as a raw JSON array. No explanation, no markdown — ONLY the array.`,
                     },
                     {
                         role: "user",
-                        content: `User search query: "${query}"
-
-Products available:
-${productList}
-
-Return ONLY a JSON array of matching product IDs. Example: ["id1","id2"]
-Be strict — only include products genuinely relevant to what the user wants.`
+                        content: `Query: "${query}"\n\nProducts:\n${productList}\n\nReturn ONLY a JSON array of matching IDs. Be strict. If nothing matches return [].`,
                     },
                 ],
                 temperature: 0.0,
-                max_tokens: 400,
+                max_tokens: 300,
             }),
         });
 
         const groqData = await groqRes.json();
-
         if (groqData.error) {
-            console.error("Groq error:", groqData.error);
+            console.error("Groq error:", groqData.error.message);
             return NextResponse.json({ products: [], source: "error" });
         }
 
         const text = groqData.choices?.[0]?.message?.content?.trim() || "[]";
-
-        // Extract JSON array robustly
         const match = text.match(/\[[\s\S]*?\]/);
-        if (!match) {
-            return NextResponse.json({ products: [], source: "no-match" });
-        }
+        if (!match) return NextResponse.json({ products: [], source: "no-match" });
 
-        let ids = [];
-        try {
-            ids = JSON.parse(match[0]);
-        } catch {
-            return NextResponse.json({ products: [], source: "parse-error" });
-        }
-
+        const ids = JSON.parse(match[0]);
         const matched = products.filter((p) => ids.includes(p._id.toString()));
 
+        console.log(`✅ Groq fallback: ${matched.length} results for "${query}"`);
         return NextResponse.json({ products: matched, source: "ai" });
 
     } catch (err) {
-        console.error("AI search error:", err);
+        console.error("Search error:", err);
         return NextResponse.json({ products: [], source: "error" });
     }
 }

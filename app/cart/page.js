@@ -222,44 +222,60 @@ export default function CartPage() {
 
         {/* ── CHECKOUT STEP ── */}
         {step === "checkout" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+            {/* LEFT — Checkout Form */}
+            <div className="lg:col-span-3">
               <button onClick={() => setStep("cart")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-indigo-600 mb-6 transition">
                 ← Back to Cart
               </button>
-              <form onSubmit={handlePlaceOrder} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Shipping Details</h2>
+
+              <form onSubmit={handlePlaceOrder} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Shipping Details</h2>
+                  <p className="text-gray-400 text-sm mt-1">Enter your delivery information below</p>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
                     <input name="name" value={form.name} onChange={handleFormChange} placeholder="John Doe" required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
                     <input name="email" type="email" value={form.email} onChange={handleFormChange} placeholder="john@example.com" required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                  <input name="address" value={form.address} onChange={handleFormChange} placeholder="123 Main Street" required
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Street Address</label>
+                  <input name="address" value={form.address} onChange={handleFormChange} placeholder="123 Main Street, Apt 4B" required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
                     <input name="city" value={form.city} onChange={handleFormChange} placeholder="New York" required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ZIP / Postal Code</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">ZIP / Postal Code</label>
                     <input name="zip" value={form.zip} onChange={handleFormChange} placeholder="10001" required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition" />
                   </div>
+                </div>
+
+                {/* Trust badges */}
+                <div className="grid grid-cols-3 gap-3 py-2">
+                  {[["🔒", "Secure Checkout"], ["🚚", "Fast Delivery"], ["↩️", "Easy Returns"]].map(([icon, label]) => (
+                    <div key={label} className="flex flex-col items-center gap-1 bg-gray-50 rounded-xl py-3 text-center">
+                      <span className="text-xl">{icon}</span>
+                      <span className="text-xs text-gray-500 font-medium">{label}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Payment note */}
@@ -268,42 +284,73 @@ export default function CartPage() {
                 </div>
 
                 {formError && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">❌ {formError}</div>
+                  <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm flex items-center gap-2">
+                    <span>❌</span> {formError}
+                  </div>
                 )}
 
                 <button type="submit" disabled={placing}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2">
-                  {placing ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Placing Order...</> : "Place Order →"}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-base">
+                  {placing
+                    ? <><svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Placing Order...</>
+                    : <>Place Order — ${total.toFixed(2)} →</>}
                 </button>
               </form>
             </div>
 
-            {/* Order summary */}
-            <div className="lg:col-span-1">
+            {/* RIGHT — Order Summary */}
+            <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Your Order</h2>
-                <div className="space-y-3 mb-4">
+                <h2 className="text-lg font-bold text-gray-800 mb-5">Order Summary</h2>
+
+                {/* Items list */}
+                <div className="space-y-4 mb-5">
                   {cart.map((item) => (
                     <div key={item._id} className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
                         <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized />
+                        <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {item.qty}
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-700 font-medium line-clamp-1">{item.title}</p>
-                        <p className="text-xs text-gray-400">× {item.qty}</p>
+                        <p className="text-sm text-gray-800 font-semibold line-clamp-1">{item.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.category}</p>
+                        <p className="text-xs text-indigo-500 font-medium mt-0.5">${item.price?.toFixed(2)} each</p>
                       </div>
-                      <p className="text-xs font-bold text-gray-700 shrink-0">${(item.price * item.qty).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-gray-800 shrink-0">${(item.price * item.qty).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-gray-100 pt-3 space-y-1 text-sm text-gray-500">
-                  <div className="flex justify-between"><span>Subtotal</span><span>${totalPrice.toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span></div>
-                  <div className="flex justify-between"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
-                  <div className="flex justify-between font-bold text-gray-800 text-base pt-2 border-t border-gray-100">
-                    <span>Total</span><span className="text-indigo-600">${total.toFixed(2)}</span>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100 pt-4 space-y-2.5 text-sm text-gray-500">
+                  <div className="flex justify-between">
+                    <span>Subtotal ({totalItems} items)</span>
+                    <span className="font-medium text-gray-700">${totalPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shipping</span>
+                    <span className={shipping === 0 ? "text-green-600 font-semibold" : "font-medium text-gray-700"}>
+                      {shipping === 0 ? "Free 🎉" : `$${shipping.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tax (8%)</span>
+                    <span className="font-medium text-gray-700">${tax.toFixed(2)}</span>
                   </div>
                 </div>
+
+                <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between items-center">
+                  <span className="text-base font-bold text-gray-800">Total</span>
+                  <span className="text-2xl font-extrabold text-indigo-600">${total.toFixed(2)}</span>
+                </div>
+
+                {shipping > 0 && (
+                  <p className="text-xs text-amber-500 mt-3 bg-amber-50 rounded-lg px-3 py-2 text-center">
+                    Add ${(50 - totalPrice).toFixed(2)} more to get free shipping!
+                  </p>
+                )}
               </div>
             </div>
           </div>
