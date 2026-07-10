@@ -1,8 +1,10 @@
 import connectDB from "@/lib/db";
 import Product from "@/models/Product";
+import { getEmbedding } from "@/lib/embed";
 import { NextResponse } from "next/server";
 
-// No manual embeddings needed — Atlas AutoEmbed handles it via voyage-4
+// Atlas AutoEmbed (voyage-4) handles semantic index automatically.
+// We ALSO store HF MiniLM embeddings in the document for in-memory cosine fallback.
 
 const PRODUCTS = [
     { title: "Blue Denim Jacket", price: 59.99, category: "Clothing", image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&q=80", description: "A timeless blue denim jacket crafted from heavyweight cotton fabric, perfect for layering on casual outings or weekend trips. Features classic button-front closure, chest pockets, and a relaxed fit that pairs with anything." },
@@ -41,9 +43,26 @@ const PRODUCTS = [
 export async function GET() {
     await connectDB();
     await Product.deleteMany();
-    await Product.insertMany(PRODUCTS);
+
+    console.log(`Generating HF embeddings for ${PRODUCTS.length} products...`);
+    const productsWithEmbeddings = [];
+
+    for (const p of PRODUCTS) {
+        try {
+            const text = `${p.title} ${p.category} ${p.description}`;
+            const embedding = await getEmbedding(text);
+            productsWithEmbeddings.push({ ...p, embedding });
+            console.log(`✓ Embedded: ${p.title} (${embedding.length}d)`);
+        } catch (err) {
+            console.error(`✗ Failed: ${p.title} — ${err.message}`);
+            productsWithEmbeddings.push({ ...p, embedding: [] });
+        }
+    }
+
+    await Product.insertMany(productsWithEmbeddings);
+    const withVectors = productsWithEmbeddings.filter(p => p.embedding.length > 0).length;
 
     return NextResponse.json({
-        message: `Seeded ${PRODUCTS.length} products. Atlas AutoEmbed will index them automatically via voyage-4.`,
+        message: `Seeded ${productsWithEmbeddings.length} products. ${withVectors} with HF embeddings. Atlas AutoEmbed will also index via voyage-4.`,
     });
 }
